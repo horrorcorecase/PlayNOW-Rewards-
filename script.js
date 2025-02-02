@@ -9,6 +9,9 @@ const offers = [
     { id: 3, name: "Watch a Video Ad", reward: 5 }
 ];
 
+// Offer redirect URL
+const offerUrl = "https://www.directcpi.com/unlock/54913";
+
 // Render Offers
 const offerList = document.getElementById("offer-list");
 offers.forEach(offer => {
@@ -16,18 +19,21 @@ offers.forEach(offer => {
     div.classList.add("offer");
     div.innerHTML = `
         <p>${offer.name} - Earn ${offer.reward} Points</p>
-        <button onclick="completeOffer(${offer.reward}, this)">Complete</button>
+        <button onclick="redirectToOffer(${offer.reward})">Complete</button>
     `;
     offerList.appendChild(div);
 });
 
-// Handle Offer Completion
-function completeOffer(reward, button) {
+// Handle Offer Completion & Redirect
+function redirectToOffer(reward) {
     userPoints = parseInt(userPoints) + reward;
     localStorage.setItem("points", userPoints);
     document.getElementById("user-points").textContent = userPoints;
-    button.disabled = true;
-    alert(`Offer completed! You earned ${reward} points.`);
+    
+    alert(`Offer clicked! Redirecting to offer page...`);
+    
+    // Redirect to the CPA offer URL
+    window.location.href = offerUrl;
 }
 
 // Fake Leaderboard
