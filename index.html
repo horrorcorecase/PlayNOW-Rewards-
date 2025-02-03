@@ -10,6 +10,7 @@
         #counter, #boost { font-size: 20px; margin-top: 20px; }
         #progressContainer { width: 80%; margin: 20px auto; background: #555; border-radius: 10px; height: 30px; position: relative; }
         #progressBar { width: 0%; height: 100%; background: #ff9900; border-radius: 10px; transition: width 0.5s; }
+        #watchAdBtn { margin-top: 20px; padding: 10px 20px; font-size: 18px; background: #ff5500; color: white; border: none; cursor: pointer; }
     </style>
 </head>
 <body>
@@ -22,21 +23,22 @@
         <div id="progressBar"></div>
     </div>
 
+    <button id="watchAdBtn" onclick="watchAd()">Watch Ad for Boost</button>
+
     <script>
         let taps = 0;
-        let tapPower = 1; // Starts at 1 tap per click
+        let tapPower = 1;
         const targetTaps = 10000000;
-        const boostLevels = [100000, 500000, 1000000, 5000000]; // Unlockable boosts
+        const boostLevels = [100000, 500000, 1000000, 5000000];
 
         function tap() {
             taps += tapPower;
             document.getElementById("counter").textContent = `Taps: ${taps}`;
             updateProgress();
 
-            // Check for unlocked boosts
             for (let i = 0; i < boostLevels.length; i++) {
                 if (taps >= boostLevels[i] && tapPower === i + 1) {
-                    tapPower *= 2; // Double tap power
+                    tapPower *= 2;
                     document.getElementById("boost").textContent = `Current Boost: x${tapPower}`;
                 }
             }
@@ -49,6 +51,26 @@
         function updateProgress() {
             let progressPercent = (taps / targetTaps) * 100;
             document.getElementById("progressBar").style.width = `${progressPercent}%`;
+        }
+
+        function watchAd() {
+            // Load CPALead Video Ad
+            let adScript = document.createElement("script");
+            adScript.src = "https://www.cpalead.com/video_ad.js";  // CPALead video ad script
+            document.body.appendChild(adScript);
+
+            adScript.onload = function() {
+                window.showCPALeadAd({
+                    onAdCompleted: function() {
+                        tapPower *= 2; // Double tap power after watching the ad
+                        document.getElementById("boost").textContent = `Current Boost: x${tapPower}`;
+                        alert("Boost Unlocked! Your taps are now worth more!");
+                    },
+                    onAdFailed: function() {
+                        alert("Failed to load ad. Try again later.");
+                    }
+                });
+            };
         }
     </script>
 </body>
