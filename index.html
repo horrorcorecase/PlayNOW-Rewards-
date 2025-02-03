@@ -72,13 +72,14 @@ function create() {
     coinsGroup = this.add.group();
     
     // Set up tap interaction
-    vault.on('pointerdown', function () {
+    vault.on('pointerdown', () => {
         if (vaultBroken) return;
 
+        // Increment tap count and update the hit text
         tapCount++;
         hitsText.setText("Hits: " + tapCount);
-        
-        // Update satoshis and calculate reward
+
+        // Update satoshis and reward
         satoshis++;
         let bitcoinReward = satoshis / satoshisPerDollar;
         rewardText.setText("Reward: " + bitcoinReward.toFixed(8) + " BTC");
