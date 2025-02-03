@@ -26,14 +26,17 @@ const gameConfig = {
 };
 
 let game = new Phaser.Game(gameConfig);
-let vault, clickCount = 0, clickText, crackEffect, coinsGroup;
+let vault, clickCount = 0, clickText, rewardText, crackEffect, coinsGroup;
 let vaultCracks = [
     'https://i.imgur.com/Crack1.png', // Add your own crack images
     'https://i.imgur.com/Crack2.png',
     'https://i.imgur.com/Crack3.png'
 ];
-let maxHits = 4;  // Number of hits before the vault breaks
 let vaultBroken = false;
+let satoshis = 0; // Player's satoshi balance
+let bitcoinPrice = 0; // Current Bitcoin price in USD
+let satoshisPerDollar = 100000; // 1 USD = 100,000 satoshis (example value)
+let maxHits = 1000000; // 1 Million Taps required to break the vault
 
 function preload() {
     this.load.image('vault', 'https://your-vault-graphic-url.com/vault.png'); // Your vault image
@@ -41,6 +44,17 @@ function preload() {
     this.load.audio('breakSound', 'https://www.soundjay.com/button/beep-09.wav'); // Replace with actual break sound URL
     this.load.image('coin', 'https://i.imgur.com/Dp7KME7.png'); // Replace with actual coin image URL
     vaultCracks.forEach((crack, index) => this.load.image(`crack${index}`, crack));
+
+    // Fetch current Bitcoin price
+    fetch('https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd')
+        .then(response => response.json())
+        .then(data => {
+            bitcoinPrice = data.bitcoin.usd;
+            satoshisPerDollar = Math.floor(1000000 / bitcoinPrice); // Calculate how many satoshis = $1
+            console.log("Bitcoin Price:", bitcoinPrice);
+            console.log("Satoshis per $1:", satoshisPerDollar);
+        })
+        .catch(error => console.error('Error fetching Bitcoin price:', error));
 }
 
 function create() {
@@ -50,6 +64,12 @@ function create() {
     clickText = this.add.text(200, 50, "Hits: 0", {
         fontSize: '24px',
         fill: '#00ffcc',
+        fontFamily: 'Arial'
+    }).setOrigin(0.5);
+
+    rewardText = this.add.text(200, 100, "Reward: 0 BTC", {
+        fontSize: '24px',
+        fill: '#ffcc00',
         fontFamily: 'Arial'
     }).setOrigin(0.5);
     
@@ -64,6 +84,12 @@ function create() {
         
         clickCount++;
         clickText.setText("Hits: " + clickCount);
+        
+        // Track satoshis (1 tap = 1 satoshi)
+        satoshis++;
+        let bitcoinReward = satoshis / satoshisPerDollar; // Reward in Bitcoin
+        
+        rewardText.setText("Reward: " + bitcoinReward.toFixed(8) + " BTC");
         
         // Play hit sound
         this.hitSound.play();
@@ -117,7 +143,7 @@ function breakVault() {
     }
 
     // Show win message
-    let winText = this.add.text(200, 450, 'You broke the vault! Bitcoin Reward!', {
+    let winText = this.add.text(200, 450, 'Vault Broken! You earned Bitcoin!', {
         fontSize: '30px',
         fill: '#FFFF00',
         fontFamily: 'Arial'
@@ -128,7 +154,9 @@ function breakVault() {
         delay: 3000,
         callback: () => {
             clickCount = 0;
+            satoshis = 0;
             clickText.setText("Hits: 0");
+            rewardText.setText("Reward: 0 BTC");
             vaultBroken = false;
             winText.destroy();
         },
