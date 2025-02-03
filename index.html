@@ -3,71 +3,52 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Break the Bank Game</title>
+    <title>Break the Bank - Tap Game</title>
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            background-color: #1d1d1d;
-            color: white;
-            text-align: center;
-            padding: 50px;
-        }
-        #tapArea {
-            width: 300px;
-            height: 300px;
-            background-color: #ff9900;
-            border-radius: 50%;
-            margin: 0 auto;
-            cursor: pointer;
-            position: relative;
-            transition: background-color 0.3s;
-        }
-        #tapArea:active {
-            background-color: #f2a900;
-        }
-        #counter {
-            font-size: 30px;
-            margin-top: 20px;
-        }
-        #message {
-            font-size: 20px;
-            margin-top: 30px;
-            color: #f2a900;
-        }
+        body { text-align: center; font-family: Arial, sans-serif; background-color: #1d1d1d; color: white; }
+        #tapBtn { width: 200px; height: 200px; background: #ff9900; border-radius: 50%; font-size: 24px; cursor: pointer; }
+        #counter, #boost { font-size: 20px; margin-top: 20px; }
+        #progressContainer { width: 80%; margin: 20px auto; background: #555; border-radius: 10px; height: 30px; position: relative; }
+        #progressBar { width: 0%; height: 100%; background: #ff9900; border-radius: 10px; transition: width 0.5s; }
     </style>
 </head>
 <body>
-    <h1>Break the Bank Game</h1>
-    <div id="tapArea" onclick="tap()"></div>
+    <h1>Break the Bank</h1>
+    <button id="tapBtn" onclick="tap()">Tap</button>
     <div id="counter">Taps: 0</div>
-    <div id="message">Tap to Break the Bank and Earn $10!</div>
+    <div id="boost">Current Boost: x1</div>
+
+    <div id="progressContainer">
+        <div id="progressBar"></div>
+    </div>
 
     <script>
-        let tapCount = 0;
-        const maxTaps = 10000000; // 10,000,000 taps to win
-        const rewardAmount = 10; // $10 reward
-        
-        const tapArea = document.getElementById("tapArea");
-        const counter = document.getElementById("counter");
-        const message = document.getElementById("message");
+        let taps = 0;
+        let tapPower = 1; // Starts at 1 tap per click
+        const targetTaps = 10000000;
+        const boostLevels = [100000, 500000, 1000000, 5000000]; // Unlockable boosts
 
         function tap() {
-            tapCount++;
-            counter.textContent = "Taps: " + tapCount;
+            taps += tapPower;
+            document.getElementById("counter").textContent = `Taps: ${taps}`;
+            updateProgress();
 
-            if (tapCount >= maxTaps) {
-                message.textContent = "Congratulations! You've earned $10!";
-                message.style.color = "#00ff00"; // Green text for reward
-                sendReward();
+            // Check for unlocked boosts
+            for (let i = 0; i < boostLevels.length; i++) {
+                if (taps >= boostLevels[i] && tapPower === i + 1) {
+                    tapPower *= 2; // Double tap power
+                    document.getElementById("boost").textContent = `Current Boost: x${tapPower}`;
+                }
+            }
+
+            if (taps >= targetTaps) {
+                alert("Congratulations! You reached 10,000,000 taps!");
             }
         }
 
-        function sendReward() {
-            // Simulate a reward being sent (this would need backend integration)
-            setTimeout(() => {
-                alert("Reward sent! You have earned a $10 PayPal or Visa debit reward.");
-                // Here you would trigger the PayPal/Visa debit reward process
-            }, 1000);
+        function updateProgress() {
+            let progressPercent = (taps / targetTaps) * 100;
+            document.getElementById("progressBar").style.width = `${progressPercent}%`;
         }
     </script>
 </body>
