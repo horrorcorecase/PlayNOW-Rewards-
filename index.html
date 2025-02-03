@@ -6,13 +6,14 @@
     <title>Break the Bank</title>
     <script src="https://cdn.jsdelivr.net/npm/phaser@3.55.2/dist/phaser.min.js"></script>
     <style>
-        body { margin: 0; background: black; color: white; text-align: center; }
+        body { margin: 0; background: #1a1a1a; color: white; text-align: center; }
         canvas { display: block; margin: auto; }
     </style>
 </head>
 <body>
 
 <script>
+// Game configuration
 const gameConfig = {
     type: Phaser.AUTO,
     width: 400,
@@ -25,104 +26,112 @@ const gameConfig = {
     }
 };
 
+// Initialize the game
 let game = new Phaser.Game(gameConfig);
-let vault, clickCount = 0, clickText, rewardText, crackEffect, coinsGroup;
-let vaultCracks = [
-    'https://i.imgur.com/Crack1.png', // Add your own crack images
-    'https://i.imgur.com/Crack2.png',
-    'https://i.imgur.com/Crack3.png'
-];
-let vaultBroken = false;
-let satoshis = 0; // Player's satoshi balance
-let bitcoinPrice = 0; // Current Bitcoin price in USD
-let satoshisPerDollar = 0; // Number of satoshis for $1
-let maxHits = 1000000; // 1 Million Taps required to break the vault
 
+// Game variables
+let vault, tapCount = 0, vaultCracks, rewardText, hitSound, breakSound, coinsGroup;
+let satoshis = 0, bitcoinPrice = 0, satoshisPerDollar = 0, vaultBroken = false;
+const maxTaps = 1000000; // 1 Million taps to break the vault
+
+// Preload assets
 function preload() {
-    this.load.image('vault', 'https://your-vault-graphic-url.com/vault.png'); // Your vault image
-    this.load.audio('hitSound', 'https://www.soundjay.com/button/beep-07.wav'); // Replace with actual hit sound URL
-    this.load.audio('breakSound', 'https://www.soundjay.com/button/beep-09.wav'); // Replace with actual break sound URL
+    this.load.image('vault', 'https://your-vault-graphic-url.com/vault.png');
+    this.load.audio('hitSound', 'https://www.soundjay.com/button/beep-07.wav');
+    this.load.audio('breakSound', 'https://www.soundjay.com/button/beep-09.wav');
     this.load.image('coin', 'https://i.imgur.com/Dp7KME7.png'); // Replace with actual coin image URL
-    vaultCracks.forEach((crack, index) => this.load.image(`crack${index}`, crack));
+    this.load.image('crack1', 'https://i.imgur.com/Crack1.png');
+    this.load.image('crack2', 'https://i.imgur.com/Crack2.png');
+    this.load.image('crack3', 'https://i.imgur.com/Crack3.png');
 
     // Fetch current Bitcoin price
     fetch('https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd')
         .then(response => response.json())
         .then(data => {
             bitcoinPrice = data.bitcoin.usd;
-            satoshisPerDollar = Math.floor(1000000 / bitcoinPrice); // Calculate how many satoshis = $1
-            console.log("Bitcoin Price:", bitcoinPrice);
-            console.log("Satoshis per $1:", satoshisPerDollar);
+            satoshisPerDollar = Math.floor(1000000 / bitcoinPrice); // Calculate satoshis per 1 USD
         })
         .catch(error => console.error('Error fetching Bitcoin price:', error));
 }
 
+// Create the game scene
 function create() {
+    // Initialize vault
     vault = this.add.image(200, 300, 'vault').setInteractive();
     vault.setScale(0.5);
     
-    clickText = this.add.text(200, 50, "Hits: 0", {
-        fontSize: '24px',
-        fill: '#00ffcc',
-        fontFamily: 'Arial'
-    }).setOrigin(0.5);
-
-    rewardText = this.add.text(200, 100, "Reward: 0 BTC", {
-        fontSize: '24px',
-        fill: '#ffcc00',
-        fontFamily: 'Arial'
-    }).setOrigin(0.5);
+    // Initialize UI texts
+    let hitsText = this.add.text(200, 50, "Hits: 0", { fontSize: '24px', fill: '#00ffcc', fontFamily: 'Arial' }).setOrigin(0.5);
+    rewardText = this.add.text(200, 100, "Reward: 0 BTC", { fontSize: '24px', fill: '#ffcc00', fontFamily: 'Arial' }).setOrigin(0.5);
     
-    // Sound effects
-    this.hitSound = this.sound.add('hitSound');
-    this.breakSound = this.sound.add('breakSound');
+    // Load sounds
+    hitSound = this.sound.add('hitSound');
+    breakSound = this.sound.add('breakSound');
     
+    // Coins group for visual effects
     coinsGroup = this.add.group();
     
+    // Set up tap interaction
     vault.on('pointerdown', function () {
         if (vaultBroken) return;
-        
-        clickCount++;
-        clickText.setText("Hits: " + clickCount);
-        
-        // Track satoshis (1 tap = 1 satoshi)
-        satoshis++;
-        
-        // Calculate Bitcoin reward based on satoshis
-        let bitcoinReward = satoshis / satoshisPerDollar; // Reward in Bitcoin
-        
-        // Update the reward text
-        rewardText.setText("Reward: " + bitcoinReward.toFixed(8) + " BTC");
-        
-        // Play hit sound
-        this.hitSound.play();
-        
-        // Show vault crack animation
-        if (clickCount <= vaultCracks.length) {
-            crackEffect = this.add.image(200, 300, `crack${clickCount - 1}`).setScale(0.5);
-            setTimeout(() => crackEffect.destroy(), 500);  // Remove crack effect after animation
-        }
 
-        // Intensity effect: Increase flash duration and intensity
+        tapCount++;
+        hitsText.setText("Hits: " + tapCount);
+        
+        // Update satoshis and calculate reward
+        satoshis++;
+        let bitcoinReward = satoshis / satoshisPerDollar;
+        rewardText.setText("Reward: " + bitcoinReward.toFixed(8) + " BTC");
+
+        // Play tap sound
+        hitSound.play();
+
+        // Visual effect of vault cracking
+        showCrackEffect(tapCount);
+
+        // Vault flash effect on tap
         vault.setTint(0xff0000);
         setTimeout(() => vault.clearTint(), 100);
 
-        // Check if vault should break
-        if (clickCount >= maxHits) {
+        // Check if vault is broken
+        if (tapCount >= maxTaps) {
             breakVault();
         }
-    }, this);
+    });
 }
 
+// Show the vault cracking effect based on the number of taps
+function showCrackEffect(tapCount) {
+    let crackEffect;
+    if (tapCount <= 3) {
+        crackEffect = this.add.image(200, 300, 'crack' + tapCount).setScale(0.5);
+        setTimeout(() => crackEffect.destroy(), 500);
+    }
+}
+
+// Handle the vault breaking logic
 function breakVault() {
     if (vaultBroken) return;
-    
+
     vaultBroken = true;
+    breakSound.play();
     
-    // Play break sound
-    this.breakSound.play();
-    
-    // Scatter coins
+    // Show coins scattering animation
+    scatterCoins();
+
+    // Display win message
+    let winText = this.add.text(200, 450, 'Vault Broken! You earned Bitcoin!', {
+        fontSize: '30px',
+        fill: '#FFFF00',
+        fontFamily: 'Arial'
+    }).setOrigin(0.5);
+
+    // Restart the game after a delay
+    restartGameAfterDelay(winText);
+}
+
+// Scatter coins effect
+function scatterCoins() {
     for (let i = 0; i < 20; i++) {
         let coin = this.add.image(Phaser.Math.Between(100, 300), Phaser.Math.Between(200, 400), 'coin').setScale(0.5);
         coin.setAlpha(0);
@@ -144,21 +153,16 @@ function breakVault() {
             }
         });
     }
+}
 
-    // Show win message
-    let winText = this.add.text(200, 450, 'Vault Broken! You earned Bitcoin!', {
-        fontSize: '30px',
-        fill: '#FFFF00',
-        fontFamily: 'Arial'
-    }).setOrigin(0.5);
-
-    // Restart game after a brief delay
+// Restart the game after a brief delay
+function restartGameAfterDelay(winText) {
     this.time.addEvent({
-        delay: 3000,
+        delay: 3000, // 3 seconds
         callback: () => {
-            clickCount = 0;
+            tapCount = 0;
             satoshis = 0;
-            clickText.setText("Hits: 0");
+            hitsText.setText("Hits: 0");
             rewardText.setText("Reward: 0 BTC");
             vaultBroken = false;
             winText.destroy();
@@ -167,8 +171,9 @@ function breakVault() {
     });
 }
 
+// Update loop
 function update() {
-    // Additional game logic can go here if needed
+    // If additional logic or animation effects are required, handle here
 }
 </script>
 
