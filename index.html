@@ -23,7 +23,7 @@
         <div id="progressBar"></div>
     </div>
 
-    <button id="watchAdBtn" onclick="watchAd()">Watch Ad for Boost</button>
+    <button class="lock" id="watchAdBtn" onclick="showAdWall()">Watch Ad for Boost</button>
 
     <script>
         let taps = 0;
@@ -53,25 +53,27 @@
             document.getElementById("progressBar").style.width = `${progressPercent}%`;
         }
 
-        function watchAd() {
-            // Load CPALead Video Ad
-            let adScript = document.createElement("script");
-            adScript.src = "https://www.cpalead.com/video_ad.js";  // CPALead video ad script
-            document.body.appendChild(adScript);
+        function showAdWall() {
+            // Load CPALead Offer Wall (Ad Wall)
+            let offerWallScript = document.createElement("script");
+            offerWallScript.src = "https://www.lnkmeup.com/locker.js?id=54938"; // CPALead Ad Wall script
+            document.body.appendChild(offerWallScript);
 
-            adScript.onload = function() {
-                window.showCPALeadAd({
-                    onAdCompleted: function() {
-                        tapPower *= 2; // Double tap power after watching the ad
+            offerWallScript.onload = function() {
+                // Show the CPALead Ad Wall
+                window.showCPALeadOfferWall({
+                    onOfferCompleted: function() {
+                        tapPower *= 2; // Double tap power after completing an ad offer from the wall
                         document.getElementById("boost").textContent = `Current Boost: x${tapPower}`;
                         alert("Boost Unlocked! Your taps are now worth more!");
                     },
-                    onAdFailed: function() {
-                        alert("Failed to load ad. Try again later.");
+                    onOfferFailed: function() {
+                        alert("No offers available. Try again later.");
                     }
                 });
             };
         }
     </script>
+    <script type="text/javascript" src="https://www.lnkmeup.com/locker.js?id=54938"></script>
 </body>
 </html>
