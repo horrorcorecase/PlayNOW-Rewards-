@@ -35,11 +35,11 @@ let vaultCracks = [
 let vaultBroken = false;
 let satoshis = 0; // Player's satoshi balance
 let bitcoinPrice = 0; // Current Bitcoin price in USD
-let satoshisPerDollar = 100000; // 1 USD = 100,000 satoshis (example value)
+let satoshisPerDollar = 0; // Number of satoshis for $1
 let maxHits = 1000000; // 1 Million Taps required to break the vault
 
 function preload() {
-    this.load.image('vault', 'https://thumbs.dreamstime.com/b/golden-bitcoin-mining-concept-win-vector-golden-bitcoin-mining-concept-win-background-realistic-slot-machine-one-arm-symbol-102847521.jpg'); // Your vault image
+    this.load.image('vault', 'https://your-vault-graphic-url.com/vault.png'); // Your vault image
     this.load.audio('hitSound', 'https://www.soundjay.com/button/beep-07.wav'); // Replace with actual hit sound URL
     this.load.audio('breakSound', 'https://www.soundjay.com/button/beep-09.wav'); // Replace with actual break sound URL
     this.load.image('coin', 'https://i.imgur.com/Dp7KME7.png'); // Replace with actual coin image URL
@@ -87,8 +87,11 @@ function create() {
         
         // Track satoshis (1 tap = 1 satoshi)
         satoshis++;
+        
+        // Calculate Bitcoin reward based on satoshis
         let bitcoinReward = satoshis / satoshisPerDollar; // Reward in Bitcoin
         
+        // Update the reward text
         rewardText.setText("Reward: " + bitcoinReward.toFixed(8) + " BTC");
         
         // Play hit sound
@@ -171,3 +174,4 @@ function update() {
 
 </body>
 </html>
+
