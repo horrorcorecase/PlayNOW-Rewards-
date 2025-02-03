@@ -3,27 +3,57 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CPAlead Offer Wall</title>
-    <link rel="stylesheet" href="styles.css">
+    <title>Break the Bank</title>
+    <script src="https://cdn.jsdelivr.net/npm/phaser@3.55.2/dist/phaser.min.js"></script>
+    <style>
+        body { margin: 0; background: black; color: white; text-align: center; }
+        canvas { display: block; margin: auto; }
+    </style>
 </head>
 <body>
-    <header>
-        <h1>PlayNOW Rewards Offer Wall</h1>
-        <p>Your Points: <span id="user-points">0</span></p>
-    </header>
 
-    <section id="offers">
-        <h2>Available Offers</h2>
-        <div id="offer-list">
-            <!-- Offers will be injected here -->
-        </div>
-    </section>
+<script>
+const gameConfig = {
+    type: Phaser.AUTO,
+    width: 400,
+    height: 600,
+    backgroundColor: "#0d0d0d",
+    scene: {
+        preload: preload,
+        create: create,
+        update: update
+    }
+};
 
-    <section id="leaderboard">
-        <h2>Leaderboard</h2>
-        <ul id="leaderboard-list"></ul>
-    </section>
+let game = new Phaser.Game(gameConfig);
+let vault, clickCount = 0, clickText;
 
-    <script src="script.js"></script>
+function preload() {
+    this.load.image('vault', 'https://i.imgur.com/qpF5HfS.png'); // Placeholder vault image
+}
+
+function create() {
+    vault = this.add.image(200, 300, 'vault').setInteractive();
+    vault.setScale(0.5);
+    
+    clickText = this.add.text(200, 50, "Hits: 0", {
+        fontSize: '24px',
+        fill: '#00ffcc',
+        fontFamily: 'Arial'
+    }).setOrigin(0.5);
+
+    vault.on('pointerdown', function () {
+        clickCount++;
+        clickText.setText("Hits: " + clickCount);
+        vault.setTint(0xff0000); // Flash effect
+        setTimeout(() => vault.clearTint(), 100);
+    });
+}
+
+function update() {
+    // Game logic can be expanded here
+}
+</script>
+
 </body>
 </html>
