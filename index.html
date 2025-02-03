@@ -26,11 +26,21 @@ const gameConfig = {
 };
 
 let game = new Phaser.Game(gameConfig);
-let vault, clickCount = 0, clickText;
+let vault, clickCount = 0, clickText, crackEffect, coinsGroup;
+let vaultCracks = [
+    'https://i.imgur.com/Crack1.png', // Add your own crack images
+    'https://i.imgur.com/Crack2.png',
+    'https://i.imgur.com/Crack3.png'
+];
+let maxHits = 4;  // Number of hits before the vault breaks
+let vaultBroken = false;
 
 function preload() {
-    // Replace with your vault graphic's URL
-    this.load.image('vault', 'https://www.shutterstock.com/image-illustration/golden-bitcoin-opened-strongbox-3d-600nw-1135199147.jpg'); // Replace with actual vault image URL
+    this.load.image('vault', 'https://your-vault-graphic-url.com/vault.png'); // Your vault image
+    this.load.audio('hitSound', 'https://www.soundjay.com/button/beep-07.wav'); // Replace with actual hit sound URL
+    this.load.audio('breakSound', 'https://www.soundjay.com/button/beep-09.wav'); // Replace with actual break sound URL
+    this.load.image('coin', 'https://i.imgur.com/Dp7KME7.png'); // Replace with actual coin image URL
+    vaultCracks.forEach((crack, index) => this.load.image(`crack${index}`, crack));
 }
 
 function create() {
@@ -42,17 +52,92 @@ function create() {
         fill: '#00ffcc',
         fontFamily: 'Arial'
     }).setOrigin(0.5);
-
+    
+    // Sound effects
+    this.hitSound = this.sound.add('hitSound');
+    this.breakSound = this.sound.add('breakSound');
+    
+    coinsGroup = this.add.group();
+    
     vault.on('pointerdown', function () {
+        if (vaultBroken) return;
+        
         clickCount++;
         clickText.setText("Hits: " + clickCount);
-        vault.setTint(0xff0000); // Flash effect
+        
+        // Play hit sound
+        this.hitSound.play();
+        
+        // Show vault crack animation
+        if (clickCount <= vaultCracks.length) {
+            crackEffect = this.add.image(200, 300, `crack${clickCount - 1}`).setScale(0.5);
+            setTimeout(() => crackEffect.destroy(), 500);  // Remove crack effect after animation
+        }
+
+        // Intensity effect: Increase flash duration and intensity
+        vault.setTint(0xff0000);
         setTimeout(() => vault.clearTint(), 100);
+
+        // Check if vault should break
+        if (clickCount >= maxHits) {
+            breakVault();
+        }
+    }, this);
+}
+
+function breakVault() {
+    if (vaultBroken) return;
+    
+    vaultBroken = true;
+    
+    // Play break sound
+    this.breakSound.play();
+    
+    // Scatter coins
+    for (let i = 0; i < 20; i++) {
+        let coin = this.add.image(Phaser.Math.Between(100, 300), Phaser.Math.Between(200, 400), 'coin').setScale(0.5);
+        coin.setAlpha(0);
+        this.tweens.add({
+            targets: coin,
+            alpha: 1,
+            y: coin.y - 50,
+            duration: 600,
+            ease: 'Power2',
+            onComplete: () => {
+                this.tweens.add({
+                    targets: coin,
+                    alpha: 0,
+                    y: coin.y + 50,
+                    duration: 400,
+                    ease: 'Power2',
+                    onComplete: () => coin.destroy()
+                });
+            }
+        });
+    }
+
+    // Show win message
+    let winText = this.add.text(200, 450, 'You broke the vault! Bitcoin Reward!', {
+        fontSize: '30px',
+        fill: '#FFFF00',
+        fontFamily: 'Arial'
+    }).setOrigin(0.5);
+
+    // Restart game after a brief delay
+    this.time.addEvent({
+        delay: 3000,
+        callback: () => {
+            clickCount = 0;
+            clickText.setText("Hits: 0");
+            vaultBroken = false;
+            winText.destroy();
+        },
+        loop: false
     });
 }
 
 function update() {
-    // Game logic can be expanded here
+    // Additional game logic can go here if needed
 }
 </script>
 
