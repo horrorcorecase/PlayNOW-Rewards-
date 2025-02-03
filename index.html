@@ -3,180 +3,72 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Break the Bank</title>
-    <script src="https://cdn.jsdelivr.net/npm/phaser@3.55.2/dist/phaser.min.js"></script>
+    <title>Break the Bank Game</title>
     <style>
-        body { margin: 0; background: #1a1a1a; color: white; text-align: center; }
-        canvas { display: block; margin: auto; }
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #1d1d1d;
+            color: white;
+            text-align: center;
+            padding: 50px;
+        }
+        #tapArea {
+            width: 300px;
+            height: 300px;
+            background-color: #ff9900;
+            border-radius: 50%;
+            margin: 0 auto;
+            cursor: pointer;
+            position: relative;
+            transition: background-color 0.3s;
+        }
+        #tapArea:active {
+            background-color: #f2a900;
+        }
+        #counter {
+            font-size: 30px;
+            margin-top: 20px;
+        }
+        #message {
+            font-size: 20px;
+            margin-top: 30px;
+            color: #f2a900;
+        }
     </style>
 </head>
 <body>
+    <h1>Break the Bank Game</h1>
+    <div id="tapArea" onclick="tap()"></div>
+    <div id="counter">Taps: 0</div>
+    <div id="message">Tap to Break the Bank and Earn $10!</div>
 
-<script>
-// Game configuration
-const gameConfig = {
-    type: Phaser.AUTO,
-    width: 400,
-    height: 600,
-    backgroundColor: "#0d0d0d",
-    scene: {
-        preload: preload,
-        create: create,
-        update: update
-    }
-};
+    <script>
+        let tapCount = 0;
+        const maxTaps = 10000000; // 10,000,000 taps to win
+        const rewardAmount = 10; // $10 reward
+        
+        const tapArea = document.getElementById("tapArea");
+        const counter = document.getElementById("counter");
+        const message = document.getElementById("message");
 
-// Initialize the game
-let game = new Phaser.Game(gameConfig);
+        function tap() {
+            tapCount++;
+            counter.textContent = "Taps: " + tapCount;
 
-// Game variables
-let vault, tapCount = 0, vaultCracks, rewardText, hitSound, breakSound, coinsGroup;
-let satoshis = 0, bitcoinPrice = 0, satoshisPerDollar = 0, vaultBroken = false;
-const maxTaps = 1000000; // 1 Million taps to break the vault
-
-// Preload assets
-function preload() {
-    this.load.image('vault', 'https://your-vault-graphic-url.com/vault.png');
-    this.load.audio('hitSound', 'https://www.soundjay.com/button/beep-07.wav');
-    this.load.audio('breakSound', 'https://www.soundjay.com/button/beep-09.wav');
-    this.load.image('coin', 'https://i.imgur.com/Dp7KME7.png'); // Replace with actual coin image URL
-    this.load.image('crack1', 'https://i.imgur.com/Crack1.png');
-    this.load.image('crack2', 'https://i.imgur.com/Crack2.png');
-    this.load.image('crack3', 'https://i.imgur.com/Crack3.png');
-
-    // Fetch current Bitcoin price
-    fetch('https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd')
-        .then(response => response.json())
-        .then(data => {
-            bitcoinPrice = data.bitcoin.usd;
-            satoshisPerDollar = Math.floor(1000000 / bitcoinPrice); // Calculate satoshis per 1 USD
-        })
-        .catch(error => console.error('Error fetching Bitcoin price:', error));
-}
-
-// Create the game scene
-function create() {
-    // Initialize vault
-    vault = this.add.image(200, 300, 'vault').setInteractive();
-    vault.setScale(0.5);
-    
-    // Initialize UI texts
-    let hitsText = this.add.text(200, 50, "Hits: 0", { fontSize: '24px', fill: '#00ffcc', fontFamily: 'Arial' }).setOrigin(0.5);
-    rewardText = this.add.text(200, 100, "Reward: 0 BTC", { fontSize: '24px', fill: '#ffcc00', fontFamily: 'Arial' }).setOrigin(0.5);
-    
-    // Load sounds
-    hitSound = this.sound.add('hitSound');
-    breakSound = this.sound.add('breakSound');
-    
-    // Coins group for visual effects
-    coinsGroup = this.add.group();
-    
-    // Set up tap interaction
-    vault.on('pointerdown', () => {
-        if (vaultBroken) return;
-
-        // Increment tap count and update the hit text
-        tapCount++;
-        hitsText.setText("Hits: " + tapCount);
-
-        // Update satoshis and reward
-        satoshis++;
-        let bitcoinReward = satoshis / satoshisPerDollar;
-        rewardText.setText("Reward: " + bitcoinReward.toFixed(8) + " BTC");
-
-        // Play tap sound
-        hitSound.play();
-
-        // Visual effect of vault cracking
-        showCrackEffect(tapCount);
-
-        // Vault flash effect on tap
-        vault.setTint(0xff0000);
-        setTimeout(() => vault.clearTint(), 100);
-
-        // Check if vault is broken
-        if (tapCount >= maxTaps) {
-            breakVault();
-        }
-    });
-}
-
-// Show the vault cracking effect based on the number of taps
-function showCrackEffect(tapCount) {
-    let crackEffect;
-    if (tapCount <= 3) {
-        crackEffect = this.add.image(200, 300, 'crack' + tapCount).setScale(0.5);
-        setTimeout(() => crackEffect.destroy(), 500);
-    }
-}
-
-// Handle the vault breaking logic
-function breakVault() {
-    if (vaultBroken) return;
-
-    vaultBroken = true;
-    breakSound.play();
-    
-    // Show coins scattering animation
-    scatterCoins();
-
-    // Display win message
-    let winText = this.add.text(200, 450, 'Vault Broken! You earned Bitcoin!', {
-        fontSize: '30px',
-        fill: '#FFFF00',
-        fontFamily: 'Arial'
-    }).setOrigin(0.5);
-
-    // Restart the game after a delay
-    restartGameAfterDelay(winText);
-}
-
-// Scatter coins effect
-function scatterCoins() {
-    for (let i = 0; i < 20; i++) {
-        let coin = this.add.image(Phaser.Math.Between(100, 300), Phaser.Math.Between(200, 400), 'coin').setScale(0.5);
-        coin.setAlpha(0);
-        this.tweens.add({
-            targets: coin,
-            alpha: 1,
-            y: coin.y - 50,
-            duration: 600,
-            ease: 'Power2',
-            onComplete: () => {
-                this.tweens.add({
-                    targets: coin,
-                    alpha: 0,
-                    y: coin.y + 50,
-                    duration: 400,
-                    ease: 'Power2',
-                    onComplete: () => coin.destroy()
-                });
+            if (tapCount >= maxTaps) {
+                message.textContent = "Congratulations! You've earned $10!";
+                message.style.color = "#00ff00"; // Green text for reward
+                sendReward();
             }
-        });
-    }
-}
+        }
 
-// Restart the game after a brief delay
-function restartGameAfterDelay(winText) {
-    this.time.addEvent({
-        delay: 3000, // 3 seconds
-        callback: () => {
-            tapCount = 0;
-            satoshis = 0;
-            hitsText.setText("Hits: 0");
-            rewardText.setText("Reward: 0 BTC");
-            vaultBroken = false;
-            winText.destroy();
-        },
-        loop: false
-    });
-}
-
-// Update loop
-function update() {
-    // If additional logic or animation effects are required, handle here
-}
-</script>
-
+        function sendReward() {
+            // Simulate a reward being sent (this would need backend integration)
+            setTimeout(() => {
+                alert("Reward sent! You have earned a $10 PayPal or Visa debit reward.");
+                // Here you would trigger the PayPal/Visa debit reward process
+            }, 1000);
+        }
+    </script>
 </body>
 </html>
